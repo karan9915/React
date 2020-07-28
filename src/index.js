@@ -1,63 +1,95 @@
-import React, { useState, useEffect } from 'react';
 import { render } from 'react-dom';
+import React from 'react';
 import './style.css';
-import Recipe from './Recipe'
+import { render } from '@testing-library/react';
+import ListItems from './ListItems.js'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faTrash } from '@fortawesome/free-solid-svg-icons'
 
-const App = () => {
 
-  const APP_ID = '52e793d7';
-  const APP_KEY = '2d1cd82c4198f341a8094d7b83fd4957';
+library.add(faTrash)
 
-  const [recipes,setRecipes] = useState([]);
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("chicken");
+class App extends React.Component{
+  constructor(props){
+    super(props);
 
-  
-
-  useEffect(() => {
-    getRecipes();
-    console.log('we are fetching data');
-  },[query]);
-
-  const getRecipes = async () => {
-    const response = await fetch(`https://api.edamam.com/search?q=${query}&app_id=${APP_ID}&app_key=${APP_KEY}`);
-    const data = await response.json();
-    setRecipes(data.hits);
-    console.log(data.hits);
+    this.state = {
+      items: [],
+      currentItems: {
+        text: '',
+        key: ''
+      }
+    }
+    this.handleInput = this.handleInput.bind(this);
+    this.addItem = this.addItem.bind(this);
+    this.deleteItem = this.deleteItem.bind(this);
+    this.setUpdate = this.setUpdate.bind(this);
   }
 
-  const updateSearch = e => {
-    setSearch(e.target.value);
+ 
+
+  handleInput(e){
+    this.setState({
+      currentItems: {
+        text: e.target.value,
+        key: Date.now()
+      }
+    })
   }
 
-  const getSearch = e => {
+  addItem(e){
     e.preventDefault();
-    setQuery(search);
-    setSearch("");
+    const newItem = this.state.currentItems;
+    console.log(newItem);
+    if(newItem.text!==""){
+      const newItems = [...this.state.items, newItem];
+      this.setState({
+        items: newItems,
+        currentItems: {
+          text: '',
+          key: ''
+        }
+      })
+    }
   }
 
-  return (
-    <div className="App">
-    <center><h1>Recipe Finder</h1></center>
-      <form onSubmit={getSearch} className="search-form">
-        <input type="text" className="search-bar" value={search} onChange={updateSearch} />
-        <button type="submit" className="search-button">
-          Search
-    </button>
+  deleteItem(key){
+    const filteredItems = this.state.items.filter(item => 
+      item.key!==key);
+      this.setState({
+        items: filteredItems
+      })
+  }
+
+  setUpdate(text, key){
+    const items = this.state.items;
+    items.map(item => {
+      if(item.key==key){
+        item.text = text;
+      }
+    })
+    this.setState({
+      items: items
+    })
+    }
+
+  render(){
+    return (
+      <div className="App">
+      <header>
+      <form id="to-do-form" onSubmit={this.addItem}>
+      <input type="text" placeholder="Enter Text"
+      value={this.state.currentItems.text} 
+      onChange={this.handleInput} />
+      <button type="submit">Add</button>
       </form>
-      <div className="recipes">
-      {recipes.map(recipe =>(
-        <Recipe 
-        key={recipe.recipe.label}
-        title={recipe.recipe.label}
-        calories={recipe.recipe.calories} 
-        image={recipe.recipe.image} 
-        ingredients={recipe.recipe.ingredients} />
-        
-      ))};
+      </header>
+
+      <ListItems items={this.state.items}
+      deleteItem={this.deleteItem} setUpdate={this.setUpdate} ></ListItems>
       </div>
-    </div>
-  )
+    )
+  }
 }
 
 render(<App />, document.getElementById('root'));
